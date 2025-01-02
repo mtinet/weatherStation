@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>날씨 정보</title>
+
+    <!-- Raphael.js (JustGage의 의존성) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"></script>
+    
+    <!-- JustGage CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/justgage@1.4.0/justgage.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            width: 250px;
+            font-size: 16px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        .gauge-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-top: 40px;
+            gap: 30px;
+        }
+
+        .gauge {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+
+        .gauge-label {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        /* 반응형 디자인을 위한 @media 쿼리 */
+        @media (max-width: 768px) {
+            .gauge {
+                width: 150px;
+                height: 150px;
+            }
+            .gauge-label {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gauge {
+                width: 120px;
+                height: 120px;
+            }
+            .gauge-label {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>현재 날씨 정보</h1>
+    <input type="text" id="city" placeholder="도시 이름을 입력하세요" />
+    <button onclick="getWeather()">날씨 확인</button>
+
+    <div id="error-message" class="error"></div>
+
+    <div class="gauge-container">
+        <div class="gauge" id="temperature-gauge">
+            <div class="gauge-label">온도</div>
+        </div>
+        <div class="gauge" id="humidity-gauge">
+            <div class="gauge-label">습도</div>
+        </div>
+        <div class="gauge" id="windspeed-gauge">
+            <div class="gauge-label">풍속</div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = "24109ddecb29a5405afe2a8df42c5e34"; // API Key
+
+        function getWeather() {
+            const city = document.getElementById('city').value;
+            if (!city) {
+                document.getElementById('error-message').textContent = "도시 이름을 입력하세요!";
+                return;
+            }
+            document.getElementById('error-message').textContent = ""; // 오류 메시지 초기화
+
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=kr`;
+
+            fetch(url)
+                .then(response => {
+                    // 응답 상태 코드가 200이 아닌 경우 오류 처리
+                    if (!response.ok) {
+                        throw new Error("서버 오류");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.cod === "404") {
+                        document.getElementById('error-message').textContent = "도시를 찾을 수 없습니다.";
+                        resetGauges();
+                    } else {
+                        const temperature = data.main.temp;
+                        const humidity = data.main.humidity;
+                        const windSpeed = data.wind.speed;
+
+                        // 게이지 업데이트
+                        updateGauge("temperature-gauge", temperature, "온도");
+                        updateGauge("humidity-gauge", humidity, "습도");
+                        updateGauge("windspeed-gauge", windSpeed, "풍속");
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('error-message').textContent = "날씨 정보를 가져오는 데 실패했습니다. 다시 시도해주세요.";
+                    resetGauges();
+                });
+        }
+
+        function updateGauge(id, value, label) {
+            // JustGage 설정
+            new JustGage({
+                id: id,
+                value: value,
+                min: 0,
+                max: label === "온도" ? 50 : (label === "습도" ? 100 : 30),
+                title: label,
+                titleFontSize: 18,
+                label: `${value}`,
+                labelFontSize: 16,
+                levelColors: ['#1eaf87', '#f39c12', '#e74c3c']
+            });
+        }
+
+        function resetGauges() {
+            // 게이지 초기화
+            new JustGage({ id: 'temperature-gauge', value: 0, min: 0, max: 50, title: "온도" });
+            new JustGage({ id: 'humidity-gauge', value: 0, min: 0, max: 100, title: "습도" });
+            new JustGage({ id: 'windspeed-gauge', value: 0, min: 0, max: 30, title: "풍속" });
+        }
+    </script>
+</body>
+</html>
