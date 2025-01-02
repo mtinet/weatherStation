@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>날씨 정보</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .weather-info {
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>현재 날씨 정보</h1>
+    <input type="text" id="city" placeholder="도시 이름을 입력하세요" />
+    <button onclick="getWeather()">날씨 확인</button>
+
+    <div class="weather-info" id="weather-info"></div>
+
+    <div id="error-message" class="error"></div>
+
+    <script>
+        const apiKey = "여기에_자신의_API_Key_입력";  // 여기서 API Key를 입력하세요.
+
+        function getWeather() {
+            const city = document.getElementById('city').value;
+            if (!city) {
+                document.getElementById('error-message').textContent = "도시 이름을 입력하세요!";
+                return;
+            }
+            document.getElementById('error-message').textContent = "";  // 오류 메시지 초기화
+
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=kr`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.cod === "404") {
+                        document.getElementById('error-message').textContent = "도시를 찾을 수 없습니다.";
+                        document.getElementById('weather-info').innerHTML = "";
+                    } else {
+                        const weatherDescription = data.weather[0].description;
+                        const temperature = data.main.temp;
+                        const humidity = data.main.humidity;
+                        const windSpeed = data.wind.speed;
+
+                        const weatherHTML = `
+                            <h2>${city}의 날씨</h2>
+                            <p>상태: ${weatherDescription}</p>
+                            <p>온도: ${temperature}°C</p>
+                            <p>습도: ${humidity}%</p>
+                            <p>풍속: ${windSpeed} m/s</p>
+                        `;
+                        document.getElementById('weather-info').innerHTML = weatherHTML;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('error-message').textContent = "날씨 정보를 가져오는 데 실패했습니다.";
+                });
+        }
+    </script>
+</body>
+</html>
